@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>英文單字冒險島</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Comic Neue', cursive; background-color: #f0f9ff; }
+    .game-container { background-color: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 8px solid #fcd34d; }
+    .tab.active { background-color: #fcd34d; color: #1e40af; transform: translateY(-5px); }
+    .btn-primary { background-color: #3b82f6; }
+    .btn-secondary { background-color: #fcd34d; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+<!-- 載入畫面 -->
+<div id="loading-screen" class="game-container p-8 w-full max-w-2xl text-center">
+  <div class="flex flex-col items-center justify-center">
+    <!-- 加一個轉圈圈 -->
+    <div class="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mb-6"></div>
+    <h1 class="text-2xl font-bold text-blue-800">正在載入1200個單字，請稍候……</h1>
+  </div>
+</div>
+
+<!-- 開始畫面 -->
+<div id="start-screen" class="game-container p-8 w-full max-w-2xl text-center hidden">
+  <h1 class="text-4xl font-bold text-blue-800 mb-6">英文單字冒險島</h1>
+  <div class="flex flex-wrap justify-center gap-4 mb-8">
+    <button class="tab active px-6 py-3 rounded-full text-lg font-bold bg-blue-100 text-blue-800" data-mode="easy">初階模式<br>(10題)</button>
+    <button class="tab px-6 py-3 rounded-full text-lg font-bold bg-blue-100 text-blue-800" data-mode="medium">進階模式<br>(30題)</button>
+    <button class="tab px-6 py-3 rounded-full text-lg font-bold bg-blue-100 text-blue-800" data-mode="hard">實戰模式<br>(50題)</button>
+  </div>
+  <!--調速語速及時間-->
+  <div class="flex flex-wrap gap-4 mb-6">
+  <div class="w-1/5"></div>
+  <div class="w-1/4">
+    <label for="rateRange" class="block mb-2 font-bold text-blue-800">語音速度：</label>
+    <input type="range" id="rateRange" min="0.6" max="0.8" step="0.1" value="0.8" class="w-full">
+    <p><span id="rateValue">正常 (0.8)</span></p>
+  </div>
+  <div class="w-1/4">
+    <label for="timeRange" class="block mb-2 font-bold text-blue-800">答題時間：</label>
+    <input type="range" id="timeRange" min="10" max="20" step="1" value="15" class="w-full">
+    <p><span id="timeValue">15秒</span></p>
+  </div>
+  </div>
+  <button id="start-btn" class="btn-primary px-8 py-4 rounded-full text-xl font-bold text-white">開始遊戲</button>
+</div>
+
+<!-- 遊戲畫面 -->
+<div id="game-screen" class="game-container p-8 w-full max-w-2xl hidden relative">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h2 class="text-2xl font-bold text-blue-800">英文單字冒險島</h2>
+      <p id="mode-display" class="text-blue-600">初階模式</p>
+    </div>
+    <div class="text-right">
+      <p class="text-lg font-bold">得分: <span id="score">0</span></p>
+      <p class="text-lg">題目: <span id="question-number">1</span>/<span id="total-questions">10</span></p>
+    </div>
+  </div>
+
+  <div class="relative h-2 bg-gray-200 rounded-full mb-6">
+    <div id="timer-bar" class="absolute top-0 left-0 h-full bg-blue-500 rounded-full" style="width: 100%;"></div>
+  </div>
+
+  <div class="word-card p-6 mb-6">
+    <h3 class="text-xl font-bold text-blue-800 mb-4">請聽音拼字</h3>
+    <div class="flex gap-2">
+      <input type="text" id="answer-input" class="flex-1 border-2 border-blue-300 rounded-lg px-4 py-2 text-lg" placeholder="請輸入英文單字...">
+      <button id="submit-btn" class="btn-primary px-6 py-2 rounded-lg text-white font-bold">送出</button>
+    </div>
+  </div>
+
+  <button id="sound-btn" class="btn-secondary px-6 py-2 rounded-lg text-blue-900 font-bold mb-4">再聽一次</button>
+  <div id="result-message" class="hidden p-4 rounded-lg text-center mb-6"></div>
+  <button id="next-btn" class="btn-primary px-8 py-3 rounded-full text-lg font-bold text-white w-full hidden">下一題</button>
+</div>
+
+<!-- 結果畫面 -->
+<div id="result-screen" class="game-container p-8 w-full max-w-2xl text-center hidden">
+  <h2 class="text-3xl font-bold text-blue-800 mb-4">遊戲結束</h2>
+  <p class="text-xl mb-2">你的得分：<span id="final-score" class="font-bold text-blue-800">0</span></p>
+  <div class="mb-6">
+    <label for="player-name" class="block text-lg mb-2">請輸入你的名字：</label>
+    <input type="text" id="player-name" class="border-2 border-blue-300 rounded-lg px-4 py-2 text-lg w-full max-w-xs" placeholder="你的名字">
+  </div>
+  <button id="save-score-btn" class="btn-secondary px-6 py-3 rounded-lg text-lg font-bold text-blue-800 mb-4">儲存成績</button>
+  <div class="mt-8">
+    <h3 class="text-2xl font-bold text-blue-800 mb-4">排行榜(前10名)</h3>
+    <div id="leaderboard" class="bg-blue-50 p-4 rounded-lg text-left"></div>
+  </div>
+  <button id="play-again-btn" class="btn-primary px-8 py-3 rounded-full text-lg font-bold text-white mt-8">再玩一次</button>
+</div>
+
+<script>
+// 設定你的 API URL
+const API_URL = "https://script.google.com/macros/s/AKfycbwrCpzpQx4mshcla-zj7wQQc54q6rltr34AW6div3XsLjfEfLc0N8JA82nE875lBvBROg/exec";
+
+let wordList = [];
+let gameWords = [];
+let currentMode = "easy";
+let currentWordIndex = 0;
+let score = 0;
+let totalQuestions = 10;
+let timer = null;
+let currentWord = null;
+let timeLeft = 10;
+
+// DOM 元素
+const startScreen = document.getElementById("start-screen");
+const loadingScreen = document.getElementById("loading-screen");
+const gameScreen = document.getElementById("game-screen");
+const resultScreen = document.getElementById("result-screen");
+const startBtn = document.getElementById("start-btn");
+const rateRange = document.getElementById("rateRange");
+const timeRange = document.getElementById("timeRange");
+const rateValue = document.getElementById("rateValue");
+const timeValue = document.getElementById("timeValue");
+const submitBtn = document.getElementById("submit-btn");
+const nextBtn = document.getElementById("next-btn");
+const soundBtn = document.getElementById("sound-btn");
+const answerInput = document.getElementById("answer-input");
+const modeDisplay = document.getElementById("mode-display");
+const scoreDisplay = document.getElementById("score");
+const questionNumberDisplay = document.getElementById("question-number");
+const totalQuestionsDisplay = document.getElementById("total-questions");
+const timerBar = document.getElementById("timer-bar");
+const resultMessage = document.getElementById("result-message");
+const finalScore = document.getElementById("final-score");
+const playerNameInput = document.getElementById("player-name");
+const saveScoreBtn = document.getElementById("save-score-btn");
+const leaderboard = document.getElementById("leaderboard");
+const playAgainBtn = document.getElementById("play-again-btn");
+
+// 初始化設定
+let currentRate = parseFloat(rateRange.value); // 語速，預設0.8
+let currentTimePerQuestion = parseInt(timeRange.value); // 每題時間，預設10秒
+
+// 語速拉桿更新
+rateRange.addEventListener("input", () => {
+  currentRate = parseFloat(rateRange.value);
+  if (currentRate === 0.8) {
+    rateValue.textContent = "正常 (0.8)";
+  } else if (currentRate === 0.7) {
+    rateValue.textContent = "稍慢 (0.7)";
+  } else if (currentRate === 0.6) {
+    rateValue.textContent = "很慢 (0.6)";
+  }
+});
+
+// 答題時間拉桿更新
+timeRange.addEventListener("input", () => {
+  currentTimePerQuestion = parseInt(timeRange.value);
+  timeValue.textContent = `${currentTimePerQuestion}秒`;
+});
+
+// 模式選擇
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    currentMode = tab.dataset.mode;
+  });
+});
+
+// 載入單字庫
+async function loadWords() {
+  const res = await fetch(API_URL + "?action=getWords");
+  wordList = await res.json();
+  
+  loadingScreen.classList.add("hidden");
+  startScreen.classList.remove("hidden");
+}
+loadWords();
+
+// 開始遊戲
+startBtn.addEventListener("click", async () => {
+  if (wordList.length === 0) {
+    await loadWords();
+  }
+  switch (currentMode) {
+    case "easy": totalQuestions = 10; break;
+    case "medium": totalQuestions = 30; break;
+    case "hard": totalQuestions = 50; break;
+  }
+  score = 0;
+  currentWordIndex = 0;
+  modeDisplay.textContent = currentMode === "easy" ? "初階模式" : currentMode === "medium" ? "進階模式" : "實戰模式";
+  scoreDisplay.textContent = score;
+  totalQuestionsDisplay.textContent = totalQuestions;
+  questionNumberDisplay.textContent = 1;
+
+  gameWords = [...wordList].sort(() => Math.random() - 0.5).slice(0, totalQuestions);
+
+  startScreen.classList.add("hidden");
+  gameScreen.classList.remove("hidden");	//顯示載入畫面
+  resultScreen.classList.add("hidden");
+  
+  displayWord();
+});
+
+// 顯示單字
+function displayWord() {
+  currentWord = gameWords[currentWordIndex];
+  playSound(currentWord);
+  timeLeft = currentTimePerQuestion;
+  timerBar.style.width = "100%";
+
+  if (timer) clearInterval(timer);
+  timer = setInterval(() => {
+    timeLeft -= 0.1;
+    timerBar.style.width = `${(timeLeft/currentTimePerQuestion)*100}%`;
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      showResult(false);
+    }
+  }, 100);
+  
+  answerInput.focus(); //指向文字方塊
+}
+
+// 播放語音
+function playSound(wordObj) {
+  const example = wordObj.examples[Math.floor(Math.random()*wordObj.examples.length)];
+  const utter = new SpeechSynthesisUtterance(`${wordObj.word}. ${example}. ${wordObj.word}.`);
+  utter.lang = "en-US";
+  utter.rate = currentRate; //調整播放速度
+  window.speechSynthesis.speak(utter);
+}
+
+// 送出答案
+submitBtn.addEventListener("click", () => {
+  clearInterval(timer);
+  window.speechSynthesis.cancel();
+  const ans = answerInput.value.trim().toLowerCase();
+  showResult(ans === currentWord.word.toLowerCase());
+});
+
+// 監聽enter鍵，送出答案及下一題
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    if (gameScreen.classList.contains("hidden")) return; // 不在遊戲畫面就不做事
+
+    if (nextBtn.classList.contains("hidden")) {
+      // 還在作答中
+      if (!answerInput.disabled) {
+        clearInterval(timer);
+        window.speechSynthesis.cancel();
+        const ans = answerInput.value.trim().toLowerCase();
+        showResult(ans === currentWord.word.toLowerCase());
+      }
+    } else {
+      // 出現下一題按鈕了
+      nextBtn.click();
+    }
+  }
+});
+
+// 顯示結果
+function showResult(correct) {
+  if (correct) {
+    score += 10;
+    scoreDisplay.textContent = score;
+    resultMessage.textContent = "答對了！";
+    resultMessage.className = "bg-green-200 text-green-900 p-4 rounded-lg mb-4";
+  } else {
+    resultMessage.textContent = `答錯了！正確答案是：${currentWord.word}`;
+    resultMessage.className = "bg-red-200 text-red-900 p-4 rounded-lg mb-4";
+    if (currentMode === "hard") {
+      currentWordIndex = totalQuestions; // 提早結束
+    }
+  }
+  answerInput.disabled = true;
+  nextBtn.classList.remove("hidden");
+  window.speechSynthesis.cancel();
+}
+
+// 下一題
+nextBtn.addEventListener("click", () => {
+  window.speechSynthesis.cancel();
+  currentWordIndex++;
+  if (currentWordIndex >= totalQuestions) {
+    endGame();
+  } else {
+    questionNumberDisplay.textContent = currentWordIndex + 1;
+    answerInput.value = "";
+    answerInput.disabled = false;
+    nextBtn.classList.add("hidden");
+    resultMessage.textContent = "";
+    displayWord();
+  }
+  
+});
+
+// 音檔重播
+soundBtn.addEventListener("click", () => {
+  playSound(currentWord);
+});
+
+// 結束遊戲
+function endGame() {
+  gameScreen.classList.add("hidden");
+  resultScreen.classList.remove("hidden");
+  finalScore.textContent = score;
+  showLeaderboard();
+}
+
+// 儲存成績
+saveScoreBtn.addEventListener("click", async () => {
+  const playerName = playerNameInput.value.trim();
+  if (!playerName) return alert("請輸入名字！");
+  saveScoreBtn.disabled = true;
+  saveScoreBtn.textContent = "儲存中...";
+  await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({ name: playerName, score: score, mode: currentMode }),
+  });
+  //alert("成績已儲存！");
+  saveScoreBtn.textContent = "已儲存";
+  saveScoreBtn.style.backgroundColor = "#9ca3af"; // Tailwind的灰色 400 (#9ca3af)
+  saveScoreBtn.style.opacity = "0.9"; // 透明度
+  playerNameInput.disabled = true;
+  showLeaderboard();
+});
+
+// 顯示排行榜
+async function showLeaderboard() {
+  const res = await fetch(`${API_URL}?action=getLeaderboard&mode=${currentMode}`);
+  const data = await res.json();
+  leaderboard.innerHTML = "";
+  data.forEach((item, idx) => {
+    const div = document.createElement("div");
+    div.textContent = `${idx+1}. ${item.name} - ${item.score}分`;
+    leaderboard.appendChild(div);
+  });
+}
+
+// 再玩一次
+playAgainBtn.addEventListener("click", () => {
+	window.speechSynthesis.cancel();
+	resultScreen.classList.add("hidden");
+	startScreen.classList.remove("hidden");
+	//修正再玩一次首題無法輸入
+	currentWordIndex = 0;
+	score = 0;
+	answerInput.value = "";
+	answerInput.disabled = false;
+	nextBtn.classList.add("hidden");
+	resultMessage.textContent = "";
+	playerNameInput.value = "";
+	playerNameInput.disabled = false;
+	saveScoreBtn.disabled = false;
+	saveScoreBtn.textContent = "儲存成績";
+	leaderboard.innerHTML = "";
+});
+
+window.addEventListener("beforeunload", (e) => {
+  window.speechSynthesis.cancel();
+});
+</script>
+</body>
+</html>
