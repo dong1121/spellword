@@ -179,6 +179,13 @@ loadWords();
 
 // 開始遊戲
 startBtn.addEventListener("click", async () => {
+	// 解鎖語音播放限制（部分瀏覽器需先有互動）
+	try {
+	  const unlock = new SpeechSynthesisUtterance('');
+	  window.speechSynthesis.speak(unlock);
+	} catch (e) {
+	  console.warn("Speech unlock failed:", e);
+	}
   if (wordList.length === 0) {
     await loadWords();
   }
