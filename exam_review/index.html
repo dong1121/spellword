@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="zh-TW">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>單字拼寫遊戲</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 20px;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #FFE5F1 0%, #E5F3FF 100%);
+            min-height: 100%;
+            user-select: none;
+        }
+
+        .game-container {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .game-title {
+            font-size: 2.5rem;
+            color: #FF6B9D;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .instruction {
+            font-size: 1.2rem;
+            color: #4A90E2;
+            margin-bottom: 30px;
+            background: white;
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .character-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 400px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid #FFB347;
+        }
+
+        .character-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .character-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+
+        .character-name {
+            font-size: 2rem;
+            color: #4A90E2;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: none; /* 隱藏人名，增加測驗感 */
+        }
+
+        .character-hint {
+            font-size: 1rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        .answer-area {
+            background: white;
+            border: 3px dashed #FFB347;
+            border-radius: 20px;
+            padding: 20px;
+            margin: 30px auto;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+        }
+
+        .answer-area.drag-over {
+            border-color: #4CAF50;
+            background-color: #E8F5E8;
+        }
+
+        .letter-slot {
+            width: 50px;
+            height: 50px;
+            border: 2px dashed #DDD;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 5px;
+            background: #F9F9F9;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .letter-slot.filled {
+            border-color: #4CAF50;
+            background: #E8F5E8;
+        }
+
+        .letters-section {
+            margin: 30px 0;
+        }
+
+        .letters-label {
+            font-size: 1.3rem;
+            color: #4A90E2;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .letters-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            padding: 15px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .letters-container.hidden {
+            display: none;
+        }
+
+        .letter-card {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #FFD93D 0%, #FF6B9D 100%);
+            border: 2px solid white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            margin: 3px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .letter-card:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+        }
+
+        .letter-card:active {
+            transform: scale(0.95);
+        }
+
+        .letter-card.used {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .controls {
+            margin: 30px 0;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50 0%, #45A049 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #FF6B9D 0%, #E91E63 100%);
+            color: white;
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, #FFB347 0%, #FF8C00 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #4CAF50 0%, #45A049 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 20px;
+            margin: 20px 0;
+            font-size: 1.3rem;
+            font-weight: bold;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .progress-info {
+            background: rgba(255,255,255,0.8);
+            padding: 15px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-size: 1.1rem;
+            color: #4A90E2;
+            font-weight: bold;
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #FF6B6B 0%, #E74C3C 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @media (max-width: 600px) {
+            .game-title {
+                font-size: 2rem;
+            }
+            
+            .letter-card {
+                width: 40px;
+                height: 40px;
+                font-size: 1.1rem;
+                margin: 2px;
+            }
+            
+            .letter-slot {
+                width: 45px;
+                height: 45px;
+                font-size: 1.3rem;
+            }
+            
+            .character-icon {
+                font-size: 3rem;
+            }
+            
+            .character-name {
+                font-size: 1.5rem;
+            }
+        }
+		
+	/* * 新加入的 CSS 
+         */
+
+        /* 預設隱藏遊戲容器 */
+        .game-container {
+            display: none;
+        }
+
+        /* 類別選擇菜單 */
+        #category-menu {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .category-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .category-btn {
+            padding: 15px 20px;
+            font-size: 1.3rem;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: #4A90E2;
+            color: white;
+            border-bottom: 4px solid #357ABD;
+        }
+
+        .category-btn:hover {
+            background-color: #5AA0F2;
+            transform: translateY(-2px);
+        }
+        
+        .category-btn:active {
+            transform: translateY(1px);
+            border-bottom-width: 2px;
+        }
+
+        /* 人名按鈕 */
+        #startNamesBtn { background-color: #FF6B9D; border-bottom-color: #D94B7F; }
+        #startNamesBtn:hover { background-color: #FF85B0; }
+        
+        /* 數字按鈕 */
+        #startNumbersBtn { background-color: #F5A623; border-bottom-color: #D08E1E; }
+        #startNumbersBtn:hover { background-color: #F7B94E; }
+        
+        /* 單字按鈕 */
+        #startWordsBtn { background-color: #7ED321; border-bottom-color: #68B01C; }
+        #startWordsBtn:hover { background-color: #90DC42; }
+
+
+        /* 進度與控制區 */
+        #progress-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .progress-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            font-size: 1rem;
+            color: #555;
+            gap: 5px;
+        }
+
+        #reviewCounter {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        #questionCounter {
+            color: #4A90E2;
+        }
+
+        .small-btn {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+    </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body>
+	<div id="category-menu">
+        <h2 class="game-title">📚 請選擇複習類別</h2>
+        <div class="category-buttons">
+            <button id="startAllBtn" class="category-btn">🔤 全部單字</button>
+            <button id="startNamesBtn" class="category-btn">🧑‍🦱 人名</button>
+            <button id="startNumbersBtn" class="category-btn">🔢 數字 (1-10)</button>
+            <button id="startWordsBtn" class="category-btn">🍎 其他單字</button>
+        </div>
+    </div>
+  <div class="game-container" id="game-container">
+   <h1 class="game-title" id="gameTitle">📚 單字拼寫遊戲</h1>
+   <div class="instruction" id="instructionText">
+    🌟 點擊卡片聽發音，然後點擊字母卡片拼出正確的單字！
+   </div>
+   <div id="progress-controls">
+		<button id="backToMenuBtn" class="control-btn small-btn">🔙 返回選單</button>
+		<div class="progress-info">
+			<span id="reviewCounter">已複習單字數: 0/0</span>
+			<span id="questionCounter">目前進度: 0/0</span>
+		</div>
+    </div>
+   <div class="character-card" id="characterCard">
+    <div class="character-icon" id="characterIcon">
+     👧
+    </div>
+    <div class="character-name" id="characterName">
+     Amber
+    </div>
+    <div class="character-hint">
+     點擊聽發音 🔊
+    </div>
+   </div>
+   <div class="answer-area" id="answerArea"><!-- 答案插槽會動態生成 -->
+   </div>
+   <div class="success-message" id="successMessage">
+    🎉 太棒了！拼字正確！
+   </div>
+   <div class="error-message" id="errorMessage">
+    ❌ 錯了喔，不是這個字母
+   </div>
+   <div class="letters-section">
+    <div class="letters-label">
+     🔤 大寫字母
+    </div>
+    <div class="letters-container" id="uppercaseContainer"><!-- 大寫字母會動態生成 -->
+    </div>
+    <div class="letters-label">
+     🔡 小寫字母
+    </div>
+    <div class="letters-container" id="lowercaseContainer"><!-- 小寫字母會動態生成 -->
+    </div>
+   </div>
+   <div class="controls"><button class="btn btn-secondary" id="speakBtn">🔊 再聽一次</button> <button class="btn btn-accent" id="resetBtn">🔄 重新拼寫</button> <button class="btn btn-primary" id="nextBtn" style="display: none;">➡️ 下一題</button>
+   </div>
+  </div>
+  <script>
+        // 預設配置
+        const defaultConfig = {
+            game_title: "📚 綜合單字拼寫遊戲",
+            instruction_text: "🌟 點擊圖片聽發音，然後拖動字母卡片拼出正確的名字！",
+            success_message: "🎉 太棒了！拼字正確！"
+        };
+
+        // =================================================================
+        // == ❗ 請在這裡填入您所有圖片的「完整檔案名稱」 ❗ ==
+        // =================================================================
+        const characterImageFiles = ["Abu.png","Amber.png","ant.png","apple.png","bag.png","boy.png","cat.png","cup.png","dog.png","duck.png","Edison.png","egg.png","eight.png","elephant.png","fan.png","fish.png","five.png","four.png","girl.png","goat.png","hand.png","hat.png","ink.png","insect.png","jam.png","jet.png","key.png","kite.png","leg.png","lion.png","Mia.png","milk.png","money.png","neck.png","nine.png","nose.png","one.png","otter.png","ox.png","Rocky.png","seven.png","six.png","Teddy.png","ten.png","three.png","two.png"];
+        
+        // -----------------------------------------------------------------
+        // == 遊戲變數與分類 ==
+        // -----------------------------------------------------------------
+        
+        // 完整的字母表
+        const uppercaseLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        const lowercaseLetters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+        
+        // 題目分類儲存陣列
+        let allWords = [...characterImageFiles];
+        let nameWords = [];
+        let numberWords = [];
+        let otherWords = [];
+
+        // 數字的明確定義 (用於分類)
+        const numberSet = new Set([
+            'one.png', 'two.png', 'three.png', 'four.png', 'five.png',
+            'six.png', 'seven.png', 'eight.png', 'nine.png', 'ten.png'
+        ]);
+
+        // 當前遊戲的題目陣列 (由玩家選擇的類別決定)
+        let characters = []; 
+        let currentCharacterIndex = 0;
+        let currentCharacter = {};
+        let placedLetters = [];
+
+        // 
+        /**
+         * 1. [新功能] 自動分類單字
+         * 將 characterImageFiles 列表中的檔案分類到三個陣列中
+         */
+        function categorizeWords() {
+            allWords.forEach(file => {
+                if (numberSet.has(file)) {
+                    // 1. 歸入數字區
+                    numberWords.push(file);
+                } else if (file[0] === file[0].toUpperCase()) {
+                    // 2. 歸入人名區 (首字母大寫)
+                    nameWords.push(file);
+                } else {
+                    // 3. 歸入其他單字區
+                    otherWords.push(file);
+                }
+            });
+            
+            // 更新按鈕上的計數 (可選, 但很貼心)
+            document.getElementById('startAllBtn').textContent += ` (${allWords.length})`;
+            document.getElementById('startNamesBtn').textContent += ` (${nameWords.length})`;
+            document.getElementById('startNumbersBtn').textContent += ` (${numberWords.length})`;
+            document.getElementById('startWordsBtn').textContent += ` (${otherWords.length})`;
+        }
+
+
+        // -----------------------------------------------------------------
+        // == 遊戲流程控制 ==
+        // -----------------------------------------------------------------
+        
+        /**
+         * 2. [修改] 初始化遊戲 (現在改為顯示選單)
+         */
+        function initGame() {
+            // 顯示選單，隱藏遊戲容器
+            document.getElementById('category-menu').style.display = 'block';
+            document.getElementById('game-container').style.display = 'none';
+            
+            // 重置成功/錯誤訊息
+            hideSuccessMessage();
+            hideErrorMessage();
+            
+            // (字母卡片在 startGame 時才會創建)
+        }
+
+        /**
+         * 3. [新功能] 根據選擇的類別開始遊戲
+         */
+        function startGame(categoryArray) {
+            if (categoryArray.length === 0) {
+                showCustomAlert("這個類別目前沒有單字喔！");
+                return;
+            }
+            
+            // 隱藏選單，顯示遊戲容器
+            document.getElementById('category-menu').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+
+            // 根據選擇的類別來隨機排列題目
+            characters = shuffleArray([...categoryArray]);
+            currentCharacterIndex = 0;
+            
+            // 創建字母卡片 (只需要執行一次)
+            // (如果之前沒創建過)
+            if (document.getElementById('uppercaseContainer').childElementCount === 0) {
+                 createLetterCards();
+            }
+            
+            loadCharacter();
+        }
+
+        /**
+         * 4. [修改] 載入當前人物 (包含大小寫判斷)
+         */
+        function loadCharacter() {
+            const fileName = characters[currentCharacterIndex];
+            const characterName = fileName.substring(0, fileName.lastIndexOf('.'));
+
+            currentCharacter = {
+                name: characterName,
+                fileName: fileName
+            };
+            
+            placedLetters = new Array(currentCharacter.name.length).fill(null);
+            
+            updateCharacterDisplay();
+            createAnswerSlots();
+            resetLetterCards();
+            hideSuccessMessage();
+            hideErrorMessage();
+            updateCounters(); // (原 updateProgressInfo)
+            
+            // -------------------------------------------------
+            // ❗ 需求 1：動態判斷大小寫 ❗
+            // -------------------------------------------------
+            const firstLetter = currentCharacter.name[0];
+            if (firstLetter === firstLetter.toLowerCase()) {
+                // 如果答案是小寫開頭 (如 "apple")，直接顯示小寫字母
+                showLowercaseLetters();
+            } else {
+                // 如果答案是大寫開頭 (如 "Amber")，顯示大寫字母
+                showUppercaseLetters();
+            }
+        }
+
+        /**
+         * 5. [修改] 更新計數器 (原 updateProgressInfo)
+         */
+        function updateCounters() {
+            // 需求 2：加入「已複習單字數：x/y」
+            const total = characters.length;
+            const completed = currentCharacterIndex;
+            const currentQuestionNum = currentCharacterIndex + 1;
+            
+            document.getElementById('reviewCounter').textContent = 
+                `已複習單字數: ${completed}/${total}`;
+            document.getElementById('questionCounter').textContent = 
+                `目前進度: ${currentQuestionNum}/${total}`;
+        }
+        
+        /**
+         * 6. [修改] 下一題 (遊戲結束後返回選單)
+         */
+        function nextQuestion() {
+            currentCharacterIndex++;
+            
+            // 檢查是否完成所有題目
+            if (currentCharacterIndex >= characters.length) {
+                // 更新計數器顯示 "已完成 Y/Y"
+                updateCounters();
+                
+                showCustomAlert('🎉 恭喜完成本區所有單字！將返回主選單。');
+                
+                // 延遲一點時間讓玩家看到訊息，然後返回選單
+                setTimeout(() => {
+                    initGame(); // 返回選單
+                }, 3000); // 延遲 3 秒
+                
+            } else {
+                // 載入下一題
+                loadCharacter();
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // == 核心功能 (大部分不變或微調) ==
+        // -----------------------------------------------------------------
+
+        // 更新人物顯示 (用圖片)
+        function updateCharacterDisplay() {
+            const iconElement = document.getElementById('characterIcon');
+            const hintElement = document.querySelector('.character-hint');
+            
+            iconElement.innerHTML = ''; 
+            iconElement.style.fontSize = 'inherit';
+            
+            const img = document.createElement('img');
+            img.src = currentCharacter.fileName;
+            img.alt = "題目圖片";
+            img.style.width = '100%';
+            img.style.maxHeight = '250px';
+            img.style.objectFit = 'contain';
+            img.style.borderRadius = '15px';
+            
+            iconElement.appendChild(img);
+            document.getElementById('characterName').textContent = currentCharacter.name;
+            hintElement.textContent = `點擊聽發音 🔊`; 
+        }
+
+        // 創建答案插槽
+        function createAnswerSlots() {
+            const answerArea = document.getElementById('answerArea');
+            answerArea.innerHTML = '';
+            for (let i = 0; i < currentCharacter.name.length; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'letter-slot';
+                slot.dataset.index = i;
+                answerArea.appendChild(slot);
+            }
+        }
+
+        // 創建字母卡片
+        function createLetterCards() {
+            createLetterSet('uppercaseContainer', uppercaseLetters);
+            createLetterSet('lowercaseContainer', lowercaseLetters);
+            showUppercaseLetters(); // 預設顯示大寫 (會被 loadCharacter 覆蓋)
+        }
+
+        function createLetterSet(containerId, letters) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            letters.forEach((letter, index) => {
+                const card = document.createElement('div');
+                card.className = 'letter-card';
+                card.textContent = letter;
+                card.dataset.letter = letter;
+                card.dataset.cardId = `${containerId}-${index}`;
+                card.addEventListener('click', handleLetterClick);
+                container.appendChild(card);
+            });
+        }
+
+        // 隨機排列陣列
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // 顯示大寫字母區域
+        function showUppercaseLetters() {
+            document.getElementById('uppercaseContainer').classList.remove('hidden');
+            document.getElementById('lowercaseContainer').classList.add('hidden');
+        }
+
+        // 顯示小寫字母區域
+        function showLowercaseLetters() {
+            document.getElementById('uppercaseContainer').classList.add('hidden');
+            document.getElementById('lowercaseContainer').classList.remove('hidden');
+        }
+
+        // 重置字母卡片狀態
+        function resetLetterCards() {
+            document.querySelectorAll('.letter-card').forEach(card => {
+                card.classList.remove('used');
+            });
+        }
+
+        // 處理字母點擊
+        function handleLetterClick(e) {
+            const letter = e.target.dataset.letter;
+            const cardId = e.target.dataset.cardId;
+            const nextEmptySlot = findNextEmptySlot();
+            
+            if (nextEmptySlot === -1) return;
+            
+            if (!isCorrectLetter(letter, nextEmptySlot)) {
+                showErrorMessage();
+                return;
+            }
+            
+            const slot = document.querySelector(`[data-index="${nextEmptySlot}"]`);
+            placedLetters[nextEmptySlot] = { letter, cardId };
+            slot.textContent = letter;
+            slot.classList.add('filled');
+            slot.style.backgroundColor = '#E8F5E8';
+            slot.style.borderColor = '#4CAF50';
+            
+            // [微調] 只有當第一個字母是大寫時，才在點擊後切換
+            const firstLetter = currentCharacter.name[0];
+            if (nextEmptySlot === 0 && (firstLetter === firstLetter.toUpperCase())) {
+                showLowercaseLetters();
+            }
+            
+            checkAnswer();
+        }
+
+        // 找到下一個空的插槽
+        function findNextEmptySlot() {
+            return placedLetters.indexOf(null);
+        }
+
+        // 顯示錯誤訊息
+        function showErrorMessage() {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.style.display = 'block';
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 2000);
+        }
+        
+        // 隱藏錯誤訊息
+        function hideErrorMessage() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        // 將字母返回容器
+        function returnLetterToContainer(letterData, fromSlot) {
+            const slot = document.querySelector(`[data-index="${fromSlot}"]`);
+            slot.textContent = '';
+            slot.classList.remove('filled');
+            slot.style.backgroundColor = '#F9F9F9';
+            slot.style.borderColor = '#DDD';
+        }
+
+        // 檢查答案
+        function checkAnswer() {
+            const userWord = placedLetters.map(item => item ? item.letter : '').join('');
+            if (userWord === currentCharacter.name) {
+                showSuccessMessage();
+                speakCharacterName();
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            }
+        }
+
+        // 檢查字母是否正確（考慮大小寫）
+        function isCorrectLetter(letter, position) {
+            return letter === currentCharacter.name[position];
+        }
+
+        // 顯示成功訊息
+        function showSuccessMessage() {
+            const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
+            const successElement = document.getElementById('successMessage');
+            successElement.textContent = config.success_message || defaultConfig.success_message;
+            successElement.style.display = 'block';
+        }
+
+        // 隱藏成功訊息
+        function hideSuccessMessage() {
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+        }
+
+        // 語音播放人物名字
+        function speakCharacterName() {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(currentCharacter.name);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8;
+                utterance.pitch = 1.2;
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        // 重置當前題目
+        function resetCurrentQuestion() {
+            placedLetters.forEach((letterData, index) => {
+                if (letterData) {
+                    returnLetterToContainer(letterData, index);
+                    placedLetters[index] = null;
+                }
+            });
+            
+            // [修改] 重置時也需要判斷大小寫
+            const firstLetter = currentCharacter.name[0];
+            if (firstLetter === firstLetter.toLowerCase()) {
+                showLowercaseLetters();
+            } else {
+                showUppercaseLetters();
+            }
+            
+            hideSuccessMessage();
+            hideErrorMessage();
+        }
+
+        // 顯示自定義提示
+        function showCustomAlert(message) {
+            // (... 此函式內容與前一版相同，為節省篇幅故省略 ...)
+            // (請保留您原本的 showCustomAlert 函式)
+            const alertDiv = document.createElement('div');
+            alertDiv.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: linear-gradient(135deg, #4CAF50 0%, #45A049 100%);
+                color: white;
+                padding: 25px 35px;
+                border-radius: 20px;
+                font-size: 1.3rem;
+                font-weight: bold;
+                box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+                z-index: 10000;
+                text-align: center;
+                max-width: 80%;
+                animation: fadeInOut 3s ease-in-out;
+            `;
+            alertDiv.textContent = message;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeInOut {
+                    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                    15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                    85% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                if (document.body.contains(alertDiv)) {
+                    document.body.removeChild(alertDiv);
+                }
+                if (document.head.contains(style)) {
+                    document.head.removeChild(style);
+                }
+            }, 3000);
+        }
+
+        // -----------------------------------------------------------------
+        // == 事件監聽器 ==
+        // -----------------------------------------------------------------
+
+        // 遊戲內部按鈕
+        document.getElementById('characterCard').addEventListener('click', speakCharacterName);
+        document.getElementById('speakBtn').addEventListener('click', speakCharacterName);
+        document.getElementById('resetBtn').addEventListener('click', resetCurrentQuestion);
+        document.getElementById('nextBtn').addEventListener('click', nextQuestion);
+
+        // [新功能] 選單按鈕
+        document.getElementById('startAllBtn').addEventListener('click', () => startGame(allWords));
+        document.getElementById('startNamesBtn').addEventListener('click', () => startGame(nameWords));
+        document.getElementById('startNumbersBtn').addEventListener('click', () => startGame(numberWords));
+        document.getElementById('startWordsBtn').addEventListener('click', () => startGame(otherWords));
+        document.getElementById('backToMenuBtn').addEventListener('click', initGame);
+
+
+        // -----------------------------------------------------------------
+        // == Element SDK (不變) ==
+        // -----------------------------------------------------------------
+        async function onConfigChange(config) {
+            const gameTitle = document.getElementById('gameTitle');
+            const instructionText = document.getElementById('instructionText');
+            
+            gameTitle.textContent = config.game_title || defaultConfig.game_title;
+            instructionText.textContent = config.instruction_text || defaultConfig.instruction_text;
+            
+            if (!config.instruction_text) {
+                instructionText.textContent = "🌟 點擊圖片聽發音，然後拖動字母卡片拼出正確的名字！";
+            }
+        }
+        function mapToCapabilities(config) { /* ... (保留原內容) ... */ 
+            return {
+                recolorables: [
+                    {
+                        get: () => config.primary_color || "#FF6B9D",
+                        set: (value) => {
+                            config.primary_color = value;
+                            if (window.elementSdk) {
+                                window.elementSdk.setConfig({ primary_color: value });
+                            }
+                        }
+                    },
+                    {
+                        get: () => config.secondary_color || "#4A90E2",
+                        set: (value) => {
+                            config.secondary_color = value;
+                            if (window.elementSdk) {
+                                window.elementSdk.setConfig({ secondary_color: value });
+                            }
+                        }
+                    },
+                    {
+                        get: () => config.accent_color || "#FFB347",
+                        set: (value) => {
+                            config.accent_color = value;
+                            if (window.elementSdk) {
+                                window.elementSdk.setConfig({ accent_color: value });
+                            }
+                        }
+                    }
+                ],
+                borderables: [],
+                fontEditable: {
+                    get: () => config.font_family || "Comic Sans MS",
+                    set: (value) => {
+                        config.font_family = value;
+                        if (window.elementSdk) {
+                            window.elementSdk.setConfig({ font_family: value });
+                        }
+                    }
+                },
+                fontSizeable: {
+                    get: () => config.font_size || 16,
+                    set: (value) => {
+                        config.font_size = value;
+                        if (window.elementSdk) {
+                            window.elementSdk.setConfig({ font_size: value });
+                        }
+                    }
+                }
+            };
+        }
+        function mapToEditPanelValues(config) { /* ... (保留原內容) ... */ 
+            return new Map([
+                ["game_title", config.game_title || defaultConfig.game_title],
+                ["instruction_text", config.instruction_text || defaultConfig.instruction_text],
+                ["success_message", config.success_message || defaultConfig.success_message]
+            ]);
+        }
+        if (window.elementSdk) {
+            window.elementSdk.init({
+                defaultConfig,
+                onConfigChange,
+                mapToCapabilities,
+                mapToEditPanelValues
+            });
+        }
+
+        // -----------------------------------------------------------------
+        // == 啟動遊戲 ==
+        // -----------------------------------------------------------------
+        
+        // 1. 先分類單字
+        categorizeWords();
+        // 2. 顯示選單
+        initGame();
+
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'997a8dac222b826b',t:'MTc2MTk5MTMxMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
