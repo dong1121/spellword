@@ -214,18 +214,6 @@
             box-shadow: 0 6px 20px rgba(0,0,0,0.3);
         }
 
-        .success-message {
-            background: linear-gradient(135deg, #4CAF50 0%, #45A049 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 20px;
-            margin: 20px 0;
-            font-size: 1.3rem;
-            font-weight: bold;
-            display: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
         .progress-info {
             background: rgba(255,255,255,0.8);
             padding: 15px;
@@ -234,19 +222,6 @@
             font-size: 1.1rem;
             color: #4A90E2;
             font-weight: bold;
-        }
-
-        .error-message {
-            background: linear-gradient(135deg, #FF6B6B 0%, #E74C3C 100%);
-            color: white;
-            padding: 15px;
-            border-radius: 15px;
-            margin: 20px 0;
-            font-size: 1.2rem;
-            font-weight: bold;
-            display: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            animation: shake 0.5s ease-in-out;
         }
 
         @keyframes shake {
@@ -281,9 +256,6 @@
                 font-size: 1.5rem;
             }
         }
-		
-	/* * 新加入的 CSS 
-         */
 
         /* 預設隱藏遊戲容器 */
         .game-container {
@@ -447,12 +419,66 @@
             font-weight: bold;
             color: #d9534f; /* 醒目的紅色 */
         }
+		
+		/* * 新加入的 CSS (V5) - 浮動提示框 
+         */
+
+        /* 提示框容器 (固定在畫面中央) */
+        .toast-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10001; /* 確保在最上層 */
+            pointer-events: none; /* 讓點擊可以穿透 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 浮動提示框本體 */
+        .toast-notification {
+            padding: 15px 25px;
+            border-radius: 15px;
+            color: white;
+            font-size: 1.5rem; /* 放大字體 */
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease-out;
+        }
+
+        /* 顯示時的動畫 (往上浮動並顯示) */
+        .toast-notification.show {
+            opacity: 0.9;
+            transform: translateY(0);
+        }
+
+        /* 消失時的動畫 (往上浮動並淡出) */
+        .toast-notification.fade-out {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        /* 成功提示的顏色 */
+        .toast-notification.success {
+            background-color: #4CAF50; /* 綠色 */
+            border: 2px solid #388E3C;
+        }
+
+        /* 錯誤提示的顏色 */
+        .toast-notification.error {
+            background-color: #d9534f; /* 紅色 */
+            border: 2px solid #c9302c;
+        }
     </style>
   <style>@view-transition { navigation: auto; }</style>
   <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
   <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
  </head>
  <body>
+	<div id="toastContainer" class="toast-container"></div>
 	<div id="category-menu">
         <h2 class="game-title">📚 請選擇複習類別</h2>
         <div class="category-buttons">
@@ -487,12 +513,6 @@
     </div>
    </div>
    <div class="answer-area" id="answerArea"><!-- 答案插槽會動態生成 -->
-   </div>
-   <div class="success-message" id="successMessage">
-    🎉 太棒了！拼字正確！
-   </div>
-   <div class="error-message" id="errorMessage">
-    ❌ 錯了喔，不是這個字母
    </div>
    <div class="letters-section">
     <div class="letters-label">
@@ -841,15 +861,13 @@
         function findNextEmptySlot() { /* ... (同前一版) ... */ 
             return placedLetters.indexOf(null);
         }
-        function showErrorMessage() { /* ... (同前一版) ... */ 
-            const errorElement = document.getElementById('errorMessage');
-            errorElement.style.display = 'block';
-            setTimeout(() => {
-                errorElement.style.display = 'none';
-            }, 2000);
+        // [v5修改] 顯示錯誤訊息 (改為浮動提示)
+        function showErrorMessage() {
+            showToast('❌ 錯了喔，不是這個字母', 'error'); // 呼叫浮動提示
         }
-        function hideErrorMessage() { /* ... (同前一版) ... */ 
-            document.getElementById('errorMessage').style.display = 'none';
+        // [v5修改] 隱藏錯誤訊息 (浮動提示會自動隱藏)
+        function hideErrorMessage() {
+            // document.getElementById('errorMessage').style.display = 'none'; // 已移除
         }
         function returnLetterToContainer(letterData, fromSlot) { /* ... (同前一版) ... */ 
             const slot = document.querySelector(`[data-index="${fromSlot}"]`);
@@ -885,14 +903,15 @@
         function isCorrectLetter(letter, position) { /* ... (同前一版) ... */ 
             return letter === currentCharacter.name[position];
         }
-        function showSuccessMessage() { /* ... (同前一版) ... */ 
+        // [v5修改] 顯示成功訊息 (改為浮動提示)
+        function showSuccessMessage() {
             const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
-            const successElement = document.getElementById('successMessage');
-            successElement.textContent = config.success_message || defaultConfig.success_message;
-            successElement.style.display = 'block';
+            const message = config.success_message || defaultConfig.success_message;
+            showToast(message, 'success'); // 呼叫浮動提示
         }
-        function hideSuccessMessage() { /* ... (同前一版) ... */ 
-            document.getElementById('successMessage').style.display = 'none';
+        // [v5修改] 隱藏成功訊息 (浮動提示會自動隱藏，但 "下一題" 按鈕仍需處理)
+        function hideSuccessMessage() {
+            // document.getElementById('successMessage').style.display = 'none'; // 已移除
             document.getElementById('nextBtn').style.display = 'none';
         }
         function speakCharacterName() { /* ... (同前一版) ... */ 
@@ -959,6 +978,41 @@
                     document.head.removeChild(style);
                 }
             }, 3000);
+        }
+		
+		// -------------------------------------------------
+        // ❗ 新功能(v5)：顯示浮動提示框 ❗
+        // -------------------------------------------------
+        function showToast(message, type) {
+            const container = document.getElementById('toastContainer');
+            
+            // 創建提示框元素
+            const toast = document.createElement('div');
+            toast.className = `toast-notification ${type}`;
+            toast.textContent = message;
+            
+            // 添加到容器中
+            container.appendChild(toast);
+            
+            // --- 動畫流程 ---
+            
+            // 1. 觸發 "show" 動畫
+            requestAnimationFrame(() => {
+                toast.classList.add('show');
+            });
+
+            // 2. 設置計時器，在 1.5 秒後開始 "fade-out"
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.classList.add('fade-out');
+            }, 1500); // 提示顯示 1.5 秒
+
+            // 3. 在 "fade-out" 動畫 (0.5s) 結束後，從 DOM 中移除
+            setTimeout(() => {
+                if (container.contains(toast)) {
+                    container.removeChild(toast);
+                }
+            }, 2000); // 1.5s + 0.5s = 2s
         }
 
         // -----------------------------------------------------------------
