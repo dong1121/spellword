@@ -150,7 +150,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.3rem;
+            font-size: 1.8rem;
             font-weight: bold;
             color: white;
             cursor: pointer;
@@ -358,11 +358,13 @@
 
         .progress-info {
             display: flex;
-            flex-direction: column;
-            align-items: flex-end;
+            flex-direction: row;     /* 1. 從 column 改為 row */
+            align-items: center;      /* 2. 讓項目垂直置中 */
+            justify-content: flex-end;  /* 3. 讓所有項目還是靠右對齊 */
+            flex-wrap: wrap;          /* 4. 當螢幕太窄時允許換行 */
             font-size: 1rem;
             color: #555;
-            gap: 5px;
+            gap: 15px;                /* 5. 增加項目之間的水平間距 */
         }
 
         #reviewCounter {
@@ -746,7 +748,7 @@
             img.src = currentCharacter.fileName;
             img.alt = "題目圖片";
             img.style.width = '100%';
-            img.style.maxHeight = '250px';
+            img.style.maxHeight = '180px';
             img.style.objectFit = 'contain';
             img.style.borderRadius = '15px';
             iconElement.appendChild(img);
